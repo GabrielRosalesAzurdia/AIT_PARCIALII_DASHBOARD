@@ -313,6 +313,6 @@ st.plotly_chart(fig, use_container_width=True)
 # ── FOOTER ────────────────────────────────────────────────────────────────────
 st.markdown("""
 <div style="text-align:center;padding:1.5rem 0 0.5rem;color:#9CA3AF;font-size:0.78rem">
-    Panel Comercial de Videojuegos &nbsp;·&nbsp; Datos históricos de ventas globales &nbsp;·&nbsp; Streamlit & Plotly
+    Panel Comercial de PS, S.A &nbsp;·&nbsp; Datos históricos de ventas globales &nbsp;·&nbsp; Streamlit & Plotly
 </div>
 """, unsafe_allow_html=True)
