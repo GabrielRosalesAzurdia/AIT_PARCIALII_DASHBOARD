@@ -2,51 +2,53 @@ import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
 
-st.set_page_config(page_title="HR Analytics", layout="wide", page_icon="👥")
+st.set_page_config(page_title="Videojuegos — Panel PS, S.A", layout="wide")
 
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
-.stApp { background: #F0F2F8; }
-.block-container { padding: 1.5rem 2.5rem 2rem 2.5rem !important; max-width: 1400px; }
+.stApp { background: #F4F6FB; }
+.block-container { padding: 1.5rem 2.5rem 2rem 2.5rem !important; max-width: 1500px; }
+
 .header-banner {
-    background: linear-gradient(135deg, #1A1A2E 0%, #16213E 50%, #0F3460 100%);
-    border-radius: 16px; padding: 2rem 2.5rem; margin-bottom: 1.5rem;
+    background: linear-gradient(135deg, #0F2027 0%, #203A43 50%, #2C5364 100%);
+    border-radius: 16px; padding: 1.8rem 2.5rem; margin-bottom: 1.5rem;
     display: flex; align-items: center; gap: 1.5rem;
 }
-.header-title { color:#fff; font-size:2rem; font-weight:700; margin:0; letter-spacing:-0.5px; }
-.header-sub   { color:#A0AEC0; font-size:0.95rem; margin:0.25rem 0 0 0; }
+.header-title { color:#fff; font-size:1.8rem; font-weight:700; margin:0; letter-spacing:-0.5px; }
+.header-sub   { color:#94A3B8; font-size:0.9rem; margin:0.3rem 0 0 0; }
 .header-badge {
-    background: linear-gradient(135deg, #E94560, #C62A47); color:white;
-    padding:0.4rem 1rem; border-radius:20px; font-size:0.8rem;
-    font-weight:600; letter-spacing:0.5px; margin-left:auto;
+    background: rgba(255,255,255,0.12); color:white; border: 1px solid rgba(255,255,255,0.2);
+    padding:0.4rem 1.1rem; border-radius:20px; font-size:0.78rem;
+    font-weight:600; letter-spacing:0.6px; margin-left:auto; white-space:nowrap;
 }
+
 .kpi-card {
-    background:white; border-radius:14px; padding:1.4rem 1.6rem;
-    box-shadow:0 2px 12px rgba(0,0,0,0.07); border-left:5px solid;
+    background:white; border-radius:14px; padding:1.2rem 1.4rem;
+    box-shadow:0 2px 10px rgba(0,0,0,0.06); border-top:4px solid;
+    height: 120px;
 }
-.kpi-label { font-size:0.78rem; font-weight:600; text-transform:uppercase; letter-spacing:0.8px; color:#718096; margin-bottom:0.4rem; }
-.kpi-value { font-size:2.1rem; font-weight:700; line-height:1; }
-.kpi-icon  { font-size:1.6rem; margin-bottom:0.6rem; }
+.kpi-label { font-size:0.72rem; font-weight:600; text-transform:uppercase; letter-spacing:0.8px; color:#6B7280; margin-bottom:0.5rem; }
+.kpi-value { font-size:1.6rem; font-weight:700; line-height:1.1; color:#111827; }
+.kpi-sub   { font-size:0.75rem; color:#9CA3AF; margin-top:0.25rem; }
+
 .sec-title {
-    font-size:1.1rem; font-weight:700; color:#1A202C;
-    margin:1.8rem 0 0.8rem 0;
-    border-bottom: 2px solid #E94560;
-    padding-bottom: 0.4rem;
+    font-size:1rem; font-weight:700; color:#111827; letter-spacing:0.2px;
+    margin:1.8rem 0 0.8rem 0; padding-bottom:0.4rem;
+    border-bottom: 2px solid #3B82F6;
+    display: inline-block;
 }
-#MainMenu, footer, header { visibility:hidden; }
+
 div[data-testid="stSelectbox"] label,
-div[data-testid="stSlider"] label {
-    color: #1A202C !important;
-    font-weight: 500;
+div[data-testid="stSlider"] label,
+div[data-testid="stMultiSelect"] label {
+    color: #111827 !important; font-weight: 500;
 }
-div[data-testid="stSelectbox"] div[data-baseweb="select"] span {
-    color: #1A202C !important;
-}
-div[data-testid="stSlider"] p {
-    color: #1A202C !important;
-}
+div[data-testid="stSelectbox"] div[data-baseweb="select"] span { color: #111827 !important; }
+div[data-testid="stSlider"] p { color: #111827 !important; }
+
+#MainMenu, footer, header { visibility:hidden; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -54,306 +56,263 @@ div[data-testid="stSlider"] p {
 # ── DATOS ─────────────────────────────────────────────────────────────────────
 @st.cache_data
 def cargar():
-    p = "Tabla_dataset_RRHH.xlsx"
-    df = pd.read_excel(p, sheet_name="Hoja1")
+    df = pd.read_excel("PS_S-A.xlsx", sheet_name="Ventas Videojuegos")
+    df = df.dropna(subset=["Ventas Global"])
+    df["Plataforma"] = df["Plataforma"].astype(str)
+    df = df[df["Año"].notna()]
+    df["Año"] = df["Año"].astype(int)
     return df
 
-df = cargar()
+df_raw = cargar()
 
-# Renombrar columnas para facilitar manejo
-df = df.rename(columns={
-    "ID Empleado": "id_empleado",
-    "Función": "funcion",
-    "Departamento": "departamento",
-    "Región": "region",
-    "Educación": "educacion",
-    "Género": "genero",
-    "Jornada": "jornada",
-    "Modalidad": "modalidad",
-    "Fecha Contratación": "fecha_contratacion",
-    "Estatus": "estatus",
-    "Fecha Baja": "fecha_baja"
-})
 
-# Extraer año de contratación
-df["año_contratacion"] = pd.to_datetime(df["fecha_contratacion"]).dt.year
-df = df[df["año_contratacion"].notna() & df["año_contratacion"].between(2000, 2026)]
-df["año_contratacion"] = df["año_contratacion"].astype(int)
+# ── LAYOUT BASE GRÁFICOS ──────────────────────────────────────────────────────
+NEGRO = "#111827"
+GRID  = "#F3F4F6"
+LINE  = "#E5E7EB"
 
-# Limpiar valores nulos en columnas clave
-df["departamento"] = df["departamento"].fillna("Sin departamento")
-df["region"] = df["region"].fillna("Sin región")
-df["educacion"] = df["educacion"].fillna("No especificado")
-df["genero"] = df["genero"].fillna("No especificado")
+def eje(title="", size=11, **kw):
+    return dict(title=dict(text=title, font=dict(size=12, color=NEGRO)),
+                gridcolor=GRID, linecolor=LINE,
+                tickfont=dict(size=size, color=NEGRO), **kw)
 
-# ── CONFIGURACIÓN BASE DE GRÁFICOS ────────────────────────────────────────────
-NEGRO       = "#1A202C"
-GRIS_TEXTO  = "#374151"
-GRID_COLOR  = "#E8ECF0"
-LINE_COLOR  = "#D1D5DB"
-
-def eje(size=11, **kwargs):
-    return dict(
-        gridcolor=GRID_COLOR,
-        linecolor=LINE_COLOR,
-        tickfont=dict(size=size, color=NEGRO),
-        title_font=dict(size=12, color=NEGRO),
-        **kwargs
-    )
-
-def base_layout(title, height, extra=None):
+def blayout(title, height, extra=None):
     cfg = dict(
-        title=dict(text=title, font=dict(size=15, color=NEGRO, family="Inter, sans-serif"), x=0.02),
-        font=dict(family="Inter, sans-serif", size=12, color=NEGRO),
-        paper_bgcolor="white",
-        plot_bgcolor="white",
-        margin=dict(t=50, b=35, l=15, r=15),
-        height=height,
+        title=dict(text=title, font=dict(size=14, color=NEGRO, family="Inter"), x=0.02),
+        font=dict(family="Inter", size=12, color=NEGRO),
+        paper_bgcolor="white", plot_bgcolor="white",
+        margin=dict(t=50, b=35, l=15, r=15), height=height,
     )
     if extra:
         cfg.update(extra)
     return cfg
 
-ESCALA_PURP = [[0,"#EDE9FF"],[0.5,"#6C63FF"],[1,"#2D1B8E"]]
-ESCALA_TEAL = [[0,"#CCFBF1"],[0.5,"#2EC4B6"],[1,"#0D7A74"]]
-ESCALA_WARM = [[0,"#FFF3CD"],[0.5,"#F7971E"],[1,"#C05C00"]]
+ESC_AZUL  = [[0,"#DBEAFE"],[0.5,"#3B82F6"],[1,"#1E3A8A"]]
+ESC_VERDE = [[0,"#D1FAE5"],[0.5,"#10B981"],[1,"#065F46"]]
+ESC_PURP  = [[0,"#EDE9FF"],[0.5,"#8B5CF6"],[1,"#3B0764"]]
+ESC_AMBER = [[0,"#FEF3C7"],[0.5,"#F59E0B"],[1,"#78350F"]]
+COLORES_REG = ["#3B82F6","#10B981","#F59E0B","#EF4444"]
 
 
 # ── HEADER ────────────────────────────────────────────────────────────────────
 st.markdown("""
 <div class="header-banner">
   <div>
-  <div>
-    <p class="header-title">HR Analytics Dashboard</p>
-    <p class="header-sub">Análisis integral de la fuerza laboral · Contrataciones, rotación y estructura organizacional</p>
+    <p class="header-title">Panel Comercial — PS, S.A</p>
+    <p class="header-sub">Rendimiento histórico de ventas por título, región, plataforma, género y editorial</p>
   </div>
-  <div class="header-badge">RECURSOS HUMANOS</div>
+  <div class="header-badge">ANÁLISIS DE VENTAS GLOBALES</div>
 </div>
 """, unsafe_allow_html=True)
 
 
 # ── FILTROS ───────────────────────────────────────────────────────────────────
-f1, f2, f3 = st.columns([1, 1, 2])
-
+f1, f2, f3, f4 = st.columns(4)
 with f1:
-    depto_opciones = ["Todos"] + sorted(df["departamento"].dropna().unique().tolist())
-    depto_sel = st.selectbox("Departamento", depto_opciones)
-
+    generos = ["Todos"] + sorted(df_raw["Genero"].dropna().unique().tolist())
+    gen_sel = st.selectbox("Género", generos)
 with f2:
-    region_opciones = ["Todas"] + sorted(df["region"].dropna().unique().tolist())
-    region_sel = st.selectbox("Región", region_opciones)
-
+    plats = ["Todas"] + sorted(df_raw["Plataforma"].dropna().unique().tolist())
+    plat_sel = st.selectbox("Plataforma", plats)
 with f3:
-    año_min = int(df["año_contratacion"].min())
-    año_max = int(df["año_contratacion"].max())
-    rango   = st.slider("Año de contratación", año_min, año_max, (2000, año_max))
+    top_eds = df_raw.groupby("Editorial")["Ventas Global"].sum().nlargest(20).index.tolist()
+    eds = ["Todas"] + top_eds
+    ed_sel = st.selectbox("Editorial (Top 20)", eds)
+with f4:
+    año_min, año_max = int(df_raw["Año"].min()), int(df_raw["Año"].max())
+    rango = st.slider("Período", año_min, año_max, (1995, año_max))
 
-# Aplicar filtros
-dff = df.copy()
-if depto_sel != "Todos":
-    dff = dff[dff["departamento"] == depto_sel]
-if region_sel != "Todas":
-    dff = dff[dff["region"] == region_sel]
-dff = dff[dff["año_contratacion"].between(rango[0], rango[1])]
+df = df_raw.copy()
+if gen_sel  != "Todos":  df = df[df["Genero"]    == gen_sel]
+if plat_sel != "Todas":  df = df[df["Plataforma"] == plat_sel]
+if ed_sel   != "Todas":  df = df[df["Editorial"]  == ed_sel]
+df = df[df["Año"].between(rango[0], rango[1])]
 
 
 # ── KPIs ──────────────────────────────────────────────────────────────────────
-st.markdown('<p class="sec-title">Indicadores Clave</p>', unsafe_allow_html=True)
+st.markdown('<span class="sec-title">Indicadores Generales</span>', unsafe_allow_html=True)
 
-total_emp = len(dff)
-activos = len(dff[dff["estatus"] == "Activo"])
-inactivos = len(dff[dff["estatus"] == "Inactivo"])
-tasa_actividad = (activos / total_emp * 100) if total_emp > 0 else 0
-deptos_unicos = dff["departamento"].nunique()
-regiones_unicas = dff["region"].nunique()
+ventas_tot   = df["Ventas Global"].sum()
+n_titulos    = df["Nombre"].nunique()
+juego_top    = df.groupby("Nombre")["Ventas Global"].sum().idxmax() if len(df) > 0 else "—"
+plat_top     = df.groupby("Plataforma")["Ventas Global"].sum().idxmax() if len(df) > 0 else "—"
+ed_top       = df.groupby("Editorial")["Ventas Global"].sum().idxmax() if len(df) > 0 else "—"
+prom_vtas    = df["Ventas Global"].mean()
+año_top      = df.groupby("Año")["Ventas Global"].sum().idxmax() if len(df) > 0 else "—"
+tasa_jp      = (df["Ventas JP"].sum() / df["Ventas Global"].sum() * 100) if len(df) > 0 else 0
 
-kpis_data = [
-    ("👥", "Total Empleados",  f"{total_emp}",       "#6C63FF"),
-    ("✅", "Activos",          f"{activos}",          "#2EC4B6"),
-    ("❌", "Inactivos",        f"{inactivos}",        "#E94560"),
-    ("📈", "% Actividad",      f"{tasa_actividad:.1f}%",  "#F7971E"),
-    ("🏢", "Departamentos",    str(deptos_unicos),   "#6C63FF"),
-    ("🌎", "Regiones",         str(regiones_unicas), "#2EC4B6"),
+kpis = [
+    ("Ventas Globales Totales", f"{ventas_tot:,.2f}M USD", "millones de dólares",     "#3B82F6"),
+    ("Títulos Analizados",      f"{n_titulos:,}",          "juegos únicos",            "#10B981"),
+    ("Juego Más Vendido",       juego_top[:22]+"…" if len(str(juego_top))>22 else juego_top,
+                                                            "mayor volumen acumulado",  "#8B5CF6"),
+    ("Plataforma Líder",        plat_top,                  "mayor volumen de ventas",  "#F59E0B"),
+    ("Editorial Dominante",     ed_top[:18]+"…" if len(str(ed_top))>18 else ed_top,
+                                                            "mayor volumen acumulado",  "#EF4444"),
+    ("Promedio por Juego",      f"{prom_vtas:.2f}M USD",   "ventas promedio",          "#06B6D4"),
+    ("Año Pico de Ventas",      str(año_top),              "mayor volumen anual",      "#F97316"),
+    ("Participación Japón",     f"{tasa_jp:.1f}%",         "del total global",         "#6366F1"),
 ]
 
-columnas = st.columns(6)
-for col, (icon, label, val, color) in zip(columnas, kpis_data):
-    with col:
+cols = st.columns(4)
+for i, (label, val, sub, color) in enumerate(kpis):
+    with cols[i % 4]:
         st.markdown(f"""
-        <div class="kpi-card" style="border-left-color:{color}">
-          <div class="kpi-icon">{icon}</div>
+        <div class="kpi-card" style="border-top-color:{color}; margin-bottom:0.8rem">
           <div class="kpi-label">{label}</div>
-          <div class="kpi-value" style="color:{color}">{val}</div>
+          <div class="kpi-value">{val}</div>
+          <div class="kpi-sub">{sub}</div>
         </div>""", unsafe_allow_html=True)
 
 
-# ── DONA + LÍNEA ──────────────────────────────────────────────────────────────
-st.markdown('<p class="sec-title">Distribución de Estatus · Evolución de Contrataciones</p>', unsafe_allow_html=True)
-c1, c2 = st.columns([1, 2])
+# ── VENTAS POR AÑO ────────────────────────────────────────────────────────────
+st.markdown('<span class="sec-title">Evolución de Ventas por Año</span>', unsafe_allow_html=True)
 
-with c1:
-    # Gráfico de dona: Activo vs Inactivo
-    tc = dff["estatus"].value_counts().reset_index()
-    tc.columns = ["Estatus", "Cantidad"]
-    fig = go.Figure(go.Pie(
-        labels=tc["Estatus"], values=tc["Cantidad"], hole=0.58,
-        marker=dict(colors=["#2EC4B6","#E94560"], line=dict(color="white", width=3)),
-        textinfo="label+percent",
-        textfont=dict(size=13, color=NEGRO),
-        hovertemplate="<b>%{label}</b><br>%{value:,} empleados<br>%{percent}<extra></extra>"
+por_año = df.groupby("Año")[["Ventas NA","Ventas EU","Ventas JP","Ventas Otros"]].sum().reset_index()
+fig = go.Figure()
+regiones = ["Ventas NA","Ventas EU","Ventas JP","Ventas Otros"]
+nombres  = ["Norteamérica","Europa","Japón","Otros"]
+for reg, nom, color in zip(regiones, nombres, COLORES_REG):
+    fig.add_trace(go.Scatter(
+        x=por_año["Año"], y=por_año[reg], name=nom, mode="lines",
+        line=dict(width=2, color=color), stackgroup="one",
+        hovertemplate=f"<b>{nom}</b><br>%{{y:.2f}}M<extra></extra>"
     ))
-    fig.add_annotation(
-        text=f"<b>{total_emp:,}</b><br><span style='font-size:11px'>empleados</span>",
-        x=0.5, y=0.5, showarrow=False, font=dict(size=16, color=NEGRO)
-    )
-    fig.update_layout(**base_layout("Activos vs Inactivos", 330, {
-        "legend": dict(orientation="h", y=-0.05, x=0.2, font=dict(color=NEGRO, size=12))
-    }))
-    st.plotly_chart(fig, use_container_width=True)
-
-with c2:
-    # Línea de contrataciones por año
-    pa = dff.groupby("año_contratacion").size().reset_index(name="Cantidad")
-    fig = go.Figure(go.Scatter(
-        x=pa["año_contratacion"], y=pa["Cantidad"],
-        mode="lines", line=dict(color="#6C63FF", width=2.5, shape="spline"),
-        fill="tozeroy", fillcolor="rgba(108,99,255,0.10)",
-        hovertemplate="<b>%{x}</b> → %{y} contrataciones<extra></extra>"
-    ))
-    fig.update_layout(**base_layout("Contrataciones por año", 330, {
-        "xaxis": eje(title="Año"),
-        "yaxis": eje(title="Contrataciones"),
-        "showlegend": False,
-        "hovermode": "x unified"
-    }))
-    st.plotly_chart(fig, use_container_width=True)
+fig.update_layout(**blayout("Ventas acumuladas por región y año (millones USD)", 380, {
+    "xaxis": eje("Año"),
+    "yaxis": eje("Ventas (M USD)"),
+    "hovermode": "x unified",
+    "legend": dict(orientation="h", y=1.08, x=0.02, font=dict(color=NEGRO, size=11))
+}))
+st.plotly_chart(fig, use_container_width=True)
 
 
-# ── DEPARTAMENTOS ─────────────────────────────────────────────────────────────
-st.markdown('<p class="sec-title">Distribución por Departamento</p>', unsafe_allow_html=True)
-top_dep = dff["departamento"].value_counts().head(12).reset_index()
-top_dep.columns = ["Departamento", "Empleados"]
+# ── FILA: VENTAS POR REGIÓN + GÉNERO ──────────────────────────────────────────
+st.markdown('<span class="sec-title">Ventas por Región y por Género</span>', unsafe_allow_html=True)
+rc1, rc2 = st.columns(2)
 
-dc1, dc2 = st.columns([3, 1])
-with dc1:
-    fig = go.Figure(go.Bar(
-        x=top_dep["Empleados"], y=top_dep["Departamento"], orientation="h",
-        marker=dict(color=top_dep["Empleados"], colorscale=ESCALA_PURP,
-                    showscale=False, line=dict(color="rgba(0,0,0,0)")),
-        hovertemplate="<b>%{y}</b><br>%{x:,} empleados<extra></extra>"
-    ))
-    fig.update_layout(**base_layout("Top departamentos con más personal", 420, {
-        "xaxis": eje(title="Cantidad de empleados"),
-        "yaxis": eje(size=11, categoryorder="total ascending"),
-    }))
-    st.plotly_chart(fig, use_container_width=True)
-with dc2:
-    st.markdown("**Ranking**")
-    td = top_dep.copy(); td.index = range(1, len(td)+1)
-    st.dataframe(td.style.bar(subset=["Empleados"], color="#C7C2FF"), use_container_width=True, height=380)
-
-
-# ── REGIONES ──────────────────────────────────────────────────────────────────
-st.markdown('<p class="sec-title">Distribución por Región</p>', unsafe_allow_html=True)
-top_reg = dff["region"].value_counts().reset_index()
-top_reg.columns = ["Región", "Empleados"]
-
-rc1, rc2 = st.columns([3, 1])
 with rc1:
-    fig = go.Figure(go.Bar(
-        x=top_reg["Empleados"], y=top_reg["Región"], orientation="h",
-        marker=dict(color=top_reg["Empleados"], colorscale=ESCALA_TEAL,
-                    showscale=False, line=dict(color="rgba(0,0,0,0)")),
-        hovertemplate="<b>%{y}</b><br>%{x:,} empleados<extra></extra>"
+    reg_totales = {
+        "Norteamérica": df["Ventas NA"].sum(),
+        "Europa":       df["Ventas EU"].sum(),
+        "Japón":        df["Ventas JP"].sum(),
+        "Otros":        df["Ventas Otros"].sum(),
+    }
+    fig = go.Figure(go.Pie(
+        labels=list(reg_totales.keys()),
+        values=list(reg_totales.values()),
+        hole=0.52,
+        marker=dict(colors=COLORES_REG, line=dict(color="white", width=2)),
+        textinfo="label+percent",
+        textfont=dict(size=12, color=NEGRO),
+        hovertemplate="<b>%{label}</b><br>%{value:.2f}M USD<br>%{percent}<extra></extra>"
     ))
-    fig.update_layout(**base_layout("Empleados por región", 350, {
-        "xaxis": eje(title="Cantidad de empleados"),
-        "yaxis": eje(size=11, categoryorder="total ascending"),
+    fig.add_annotation(text=f"<b>{sum(reg_totales.values()):.0f}M</b><br>total",
+                       x=0.5, y=0.5, showarrow=False, font=dict(size=14, color=NEGRO))
+    fig.update_layout(**blayout("Distribución de ventas por región", 340, {
+        "legend": dict(orientation="h", y=-0.08, x=0.1, font=dict(color=NEGRO, size=11))
     }))
     st.plotly_chart(fig, use_container_width=True)
+
 with rc2:
-    st.markdown("**Ranking**")
-    tr = top_reg.copy(); tr.index = range(1, len(tr)+1)
-    st.dataframe(tr.style.bar(subset=["Empleados"], color="#99F0EA"), use_container_width=True, height=310)
-
-
-# ── GÉNERO Y MODALIDAD ───────────────────────────────────────────────────────
-st.markdown('<p class="sec-title">Género · Modalidad · Jornada</p>', unsafe_allow_html=True)
-g1, g2, g3 = st.columns(3)
-
-with g1:
-    gen = dff["genero"].value_counts().reset_index()
-    gen.columns = ["Género", "Cantidad"]
+    por_gen = df.groupby("Genero")["Ventas Global"].sum().sort_values(ascending=True)
     fig = go.Figure(go.Bar(
-        x=gen["Cantidad"], y=gen["Género"], orientation="h",
-        marker=dict(color=gen["Cantidad"], colorscale=ESCALA_WARM,
-                    showscale=False, line=dict(color="rgba(0,0,0,0)")),
-        hovertemplate="<b>%{y}</b><br>%{x:,} empleados<extra></extra>"
+        x=por_gen.values, y=por_gen.index, orientation="h",
+        marker=dict(color=por_gen.values, colorscale=ESC_PURP, showscale=False,
+                    line=dict(color="rgba(0,0,0,0)")),
+        hovertemplate="<b>%{y}</b><br>%{x:.2f}M USD<extra></extra>"
     ))
-    fig.update_layout(**base_layout("Por Género", 280, {
-        "xaxis": eje(title="Empleados"),
-        "yaxis": eje(size=11, categoryorder="total ascending"),
-    }))
-    st.plotly_chart(fig, use_container_width=True)
-
-with g2:
-    mod = dff["modalidad"].value_counts().reset_index()
-    mod.columns = ["Modalidad", "Cantidad"]
-    fig = go.Figure(go.Bar(
-        x=mod["Cantidad"], y=mod["Modalidad"], orientation="h",
-        marker=dict(color=mod["Cantidad"], colorscale=ESCALA_TEAL,
-                    showscale=False, line=dict(color="rgba(0,0,0,0)")),
-        hovertemplate="<b>%{y}</b><br>%{x:,} empleados<extra></extra>"
-    ))
-    fig.update_layout(**base_layout("Por Modalidad", 280, {
-        "xaxis": eje(title="Empleados"),
-        "yaxis": eje(size=11, categoryorder="total ascending"),
-    }))
-    st.plotly_chart(fig, use_container_width=True)
-
-with g3:
-    jor = dff["jornada"].value_counts().reset_index()
-    jor.columns = ["Jornada", "Cantidad"]
-    fig = go.Figure(go.Bar(
-        x=jor["Cantidad"], y=jor["Jornada"], orientation="h",
-        marker=dict(color=jor["Cantidad"], colorscale=ESCALA_PURP,
-                    showscale=False, line=dict(color="rgba(0,0,0,0)")),
-        hovertemplate="<b>%{y}</b><br>%{x:,} empleados<extra></extra>"
-    ))
-    fig.update_layout(**base_layout("Por Jornada", 280, {
-        "xaxis": eje(title="Empleados"),
-        "yaxis": eje(size=11, categoryorder="total ascending"),
+    fig.update_layout(**blayout("Ventas totales por género (M USD)", 340, {
+        "xaxis": eje("Ventas (M USD)"),
+        "yaxis": eje(size=11),
     }))
     st.plotly_chart(fig, use_container_width=True)
 
 
-# ── EDUCACIÓN ─────────────────────────────────────────────────────────────────
-st.markdown('<p class="sec-title">Nivel Educativo</p>', unsafe_allow_html=True)
-top_ed = dff["educacion"].value_counts().reset_index()
-top_ed.columns = ["Educación", "Empleados"]
+# ── FILA: TOP PLATAFORMAS + TOP EDITORIALES ───────────────────────────────────
+st.markdown('<span class="sec-title">Plataformas y Editoriales</span>', unsafe_allow_html=True)
+pc1, pc2 = st.columns(2)
 
-ec1, ec2 = st.columns([3, 1])
-with ec1:
+with pc1:
+    top_plat = df.groupby("Plataforma")["Ventas Global"].sum().nlargest(12).sort_values()
     fig = go.Figure(go.Bar(
-        x=top_ed["Empleados"], y=top_ed["Educación"], orientation="h",
-        marker=dict(color=top_ed["Empleados"], colorscale=ESCALA_WARM,
-                    showscale=False, line=dict(color="rgba(0,0,0,0)")),
-        hovertemplate="<b>%{y}</b><br>%{x:,} empleados<extra></extra>"
+        x=top_plat.values, y=top_plat.index, orientation="h",
+        marker=dict(color=top_plat.values, colorscale=ESC_AZUL, showscale=False,
+                    line=dict(color="rgba(0,0,0,0)")),
+        hovertemplate="<b>%{y}</b><br>%{x:.2f}M USD<extra></extra>"
     ))
-    fig.update_layout(**base_layout("Distribución por nivel educativo", 300, {
-        "xaxis": eje(title="Cantidad de empleados"),
-        "yaxis": eje(size=11, categoryorder="total ascending"),
+    fig.update_layout(**blayout("Top 12 Plataformas por ventas globales", 400, {
+        "xaxis": eje("Ventas (M USD)"),
+        "yaxis": eje(size=11),
     }))
     st.plotly_chart(fig, use_container_width=True)
-with ec2:
-    st.markdown("**Ranking**")
-    te = top_ed.copy(); te.index = range(1, len(te)+1)
-    st.dataframe(te.style.bar(subset=["Empleados"], color="#FDE68A"), use_container_width=True, height=260)
+
+with pc2:
+    top_ed = df.groupby("Editorial")["Ventas Global"].sum().nlargest(12).sort_values()
+    fig = go.Figure(go.Bar(
+        x=top_ed.values, y=top_ed.index, orientation="h",
+        marker=dict(color=top_ed.values, colorscale=ESC_VERDE, showscale=False,
+                    line=dict(color="rgba(0,0,0,0)")),
+        hovertemplate="<b>%{y}</b><br>%{x:.2f}M USD<extra></extra>"
+    ))
+    fig.update_layout(**blayout("Top 12 Editoriales por ventas globales", 400, {
+        "xaxis": eje("Ventas (M USD)"),
+        "yaxis": eje(size=11),
+    }))
+    st.plotly_chart(fig, use_container_width=True)
+
+
+# ── TOP 15 JUEGOS ─────────────────────────────────────────────────────────────
+st.markdown('<span class="sec-title">Top 15 Juegos Más Vendidos</span>', unsafe_allow_html=True)
+
+top_juegos = df.groupby("Nombre")["Ventas Global"].sum().nlargest(15).sort_values()
+fig = go.Figure(go.Bar(
+    x=top_juegos.values, y=top_juegos.index, orientation="h",
+    marker=dict(color=top_juegos.values, colorscale=ESC_AMBER, showscale=False,
+                line=dict(color="rgba(0,0,0,0)")),
+    hovertemplate="<b>%{y}</b><br>%{x:.2f}M USD<extra></extra>"
+))
+fig.update_layout(**blayout("Top 15 títulos con mayor volumen de ventas globales (M USD)", 480, {
+    "xaxis": eje("Ventas globales (M USD)"),
+    "yaxis": eje(size=11),
+}))
+st.plotly_chart(fig, use_container_width=True)
+
+
+# ── JAPÓN vs GLOBAL ───────────────────────────────────────────────────────────
+st.markdown('<span class="sec-title">Japón vs Resto del Mundo — Comparativa por Año</span>', unsafe_allow_html=True)
+
+jp_año = df.groupby("Año").agg(JP=("Ventas JP","sum"), Global=("Ventas Global","sum")).reset_index()
+jp_año["Resto"] = jp_año["Global"] - jp_año["JP"]
+jp_año["Tasa JP (%)"] = (jp_año["JP"] / jp_año["Global"] * 100).round(2)
+
+fig = go.Figure()
+fig.add_trace(go.Bar(x=jp_año["Año"], y=jp_año["JP"], name="Japón",
+    marker_color="#6366F1",
+    hovertemplate="<b>%{x}</b><br>JP: %{y:.2f}M<extra></extra>"))
+fig.add_trace(go.Bar(x=jp_año["Año"], y=jp_año["Resto"], name="Resto del mundo",
+    marker_color="#D1D5DB",
+    hovertemplate="<b>%{x}</b><br>Resto: %{y:.2f}M<extra></extra>"))
+fig.add_trace(go.Scatter(x=jp_año["Año"], y=jp_año["Tasa JP (%)"], name="% Japón",
+    yaxis="y2", mode="lines+markers",
+    line=dict(color="#EF4444", width=2), marker=dict(size=4),
+    hovertemplate="%{y:.1f}%<extra></extra>"))
+fig.update_layout(**blayout("Ventas Japón vs resto del mundo (barras apiladas) · % participación JP (línea roja)", 400, {
+    "xaxis":  eje("Año"),
+    "yaxis":  eje("Ventas (M USD)"),
+    "yaxis2": dict(title=dict(text="% Japón", font=dict(size=12, color="#EF4444")),
+                   overlaying="y", side="right", showgrid=False,
+                   tickfont=dict(size=11, color="#EF4444"), ticksuffix="%"),
+    "barmode": "stack",
+    "hovermode": "x unified",
+    "legend": dict(orientation="h", y=1.08, x=0.02, font=dict(color=NEGRO, size=11))
+}))
+st.plotly_chart(fig, use_container_width=True)
 
 
 # ── FOOTER ────────────────────────────────────────────────────────────────────
 st.markdown("""
-<div style="text-align:center;padding:1.5rem 0 0.5rem;color:#94A3B8;font-size:0.8rem">
-    HR Analytics Dashboard · Fuerza Laboral · Streamlit & Plotly
+<div style="text-align:center;padding:1.5rem 0 0.5rem;color:#9CA3AF;font-size:0.78rem">
+    Panel Comercial de Videojuegos &nbsp;·&nbsp; Datos históricos de ventas globales &nbsp;·&nbsp; Streamlit & Plotly
 </div>
 """, unsafe_allow_html=True)
